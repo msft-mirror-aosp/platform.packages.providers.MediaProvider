@@ -9697,7 +9697,7 @@ public class MediaProvider extends ContentProvider {
         }
 
         // Check if the caller has access to private app directories.
-        if (isUidAllowedAccessToDataOrObbPathForFuse(mCallingIdentity.get().uid, filePath)) {
+        if (isUidAllowedAccessToDataOrObbPath(mCallingIdentity.get().uid, filePath)) {
             return true;
         }
 
@@ -9712,6 +9712,7 @@ public class MediaProvider extends ContentProvider {
      * the caller does not have special access.
      */
     private boolean isPrivatePackagePathNotAccessibleByCaller(String path) {
+        path = FileUtils.normalizeAndFilterDefaultIgnorableCodepoints(path);
         // Files under the apps own private directory
         final String appSpecificDir = extractPathOwnerPackageName(path);
 
@@ -9724,7 +9725,7 @@ public class MediaProvider extends ContentProvider {
         if (isExternalMediaDirectory(path)) {
             return false;
         }
-        return !isUidAllowedAccessToDataOrObbPathForFuse(mCallingIdentity.get().uid, path);
+        return !isUidAllowedAccessToDataOrObbPath(mCallingIdentity.get().uid, path);
     }
 
     private boolean shouldBypassDatabaseAndSetDirtyForFuse(int uid, String path) {
@@ -10577,6 +10578,11 @@ public class MediaProvider extends ContentProvider {
 
     @Keep
     public boolean isUidAllowedAccessToDataOrObbPathForFuse(int uid, String path) {
+        return isUidAllowedAccessToDataOrObbPath(uid,
+                FileUtils.normalizeAndFilterDefaultIgnorableCodepoints(path));
+    }
+
+    private boolean isUidAllowedAccessToDataOrObbPath(int uid, String path) {
         final LocalCallingIdentity token =
                 clearLocalCallingIdentity(getCachedCallingIdentityForFuse(uid));
         try {
