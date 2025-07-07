@@ -7674,6 +7674,7 @@ public class MediaProvider extends ContentProvider {
 
         if (!authority.equals(MediaDocumentsProvider.AUTHORITY)
                 && !authority.equals(DocumentsContract.EXTERNAL_STORAGE_PROVIDER_AUTHORITY)) {
+            restoreCallingIdentity(token);
             throw new IllegalArgumentException("Provider for this Uri is not supported.");
         }
 
@@ -8978,8 +8979,15 @@ public class MediaProvider extends ContentProvider {
             }
 
             final LocalCallingIdentity token = clearLocalCallingIdentity();
-            final Uri genericUri = MediaStore.Files.getContentUri(volumeName,
-                    ContentUris.parseId(uri));
+
+            final Uri genericUri;
+            try {
+                genericUri = MediaStore.Files.getContentUri(volumeName, ContentUris.parseId(uri));
+            } catch (NumberFormatException e) {
+                restoreLocalCallingIdentity(token);
+                throw e;
+            }
+
             try (Cursor c = queryForSingleItem(genericUri,
                     sPlacementColumns.toArray(new String[0]), userWhere, userWhereArgs, null)) {
                 for (int i = 0; i < c.getColumnCount(); i++) {
