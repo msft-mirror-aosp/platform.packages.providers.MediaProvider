@@ -30,6 +30,7 @@ import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.database.Cursor.FIELD_TYPE_BLOB;
 import static android.provider.CloudMediaProviderContract.EXTRA_ASYNC_CONTENT_PROVIDER;
 import static android.provider.CloudMediaProviderContract.METHOD_GET_ASYNC_CONTENT_PROVIDER;
+import static android.provider.MediaStore.EXTRA_CALLING_PACKAGE_UID;
 import static android.provider.MediaStore.EXTRA_IS_STABLE_URIS_ENABLED;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE;
 import static android.provider.MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE;
@@ -7645,6 +7646,7 @@ public class MediaProvider extends ContentProvider {
 
         final Context context = getContext();
         final Intent intent = new Intent(method, null, context, PermissionActivity.class);
+        extras.putInt(EXTRA_CALLING_PACKAGE_UID, getCallingUidOrSelf());
         intent.putExtras(extras);
         final ActivityOptions options = ActivityOptions.makeBasic();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
