@@ -19,6 +19,7 @@ package com.android.photopicker.features.selectionbar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.android.photopicker.core.configuration.PhotopickerConfiguration
+import com.android.photopicker.core.events.Event
 import com.android.photopicker.core.events.RegisteredEventClass
 import com.android.photopicker.core.features.FeatureManager
 import com.android.photopicker.core.features.FeatureRegistration
@@ -38,7 +39,10 @@ class SelectionBarFeature : PhotopickerUiFeature {
         // The selection bar is only shown when in multi-select mode. For single select,
         // the activity ends as soon as the first Media is selected, so this feature is
         // disabled to prevent it's animation for playing when the selection changes.
-        override fun isEnabled(config: PhotopickerConfiguration) = config.selectionLimit > 1
+        override fun isEnabled(
+            config: PhotopickerConfiguration,
+            deferredPrefetchResultsMap: Map<PrefetchResultKey, Deferred<Any?>>,
+        ): Boolean = true
 
         override fun build(featureManager: FeatureManager) = SelectionBarFeature()
     }

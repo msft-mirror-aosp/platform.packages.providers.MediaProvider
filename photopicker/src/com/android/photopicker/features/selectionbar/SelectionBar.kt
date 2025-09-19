@@ -61,7 +61,10 @@ private val MEASUREMENT_BAR_PADDING = 12.dp
 fun SelectionBar(modifier: Modifier = Modifier, params: LocationParams) {
     // Collect selection to ensure this is recomposed when the selection is updated.
     val currentSelection by LocalSelection.current.flow.collectAsStateWithLifecycle()
-    val visible = currentSelection.isNotEmpty()
+    val visible = currentSelection.isNotEmpty() ||
+            MediaStore.ACTION_USER_SELECT_IMAGES_FOR_APP.equals(
+                LocalPhotopickerConfiguration.current.action
+            )
     val numberFormatter = remember { NumberFormat.getInstance() }
 
     // The entire selection bar is hidden if the selection is empty, and
