@@ -7098,6 +7098,7 @@ public class MediaProvider extends ContentProvider {
 
         if (!authority.equals(MediaDocumentsProvider.AUTHORITY)
                 && !authority.equals(DocumentsContract.EXTERNAL_STORAGE_PROVIDER_AUTHORITY)) {
+            restoreCallingIdentity(token);
             throw new IllegalArgumentException("Provider for this Uri is not supported.");
         }
 
@@ -7641,6 +7642,22 @@ public class MediaProvider extends ContentProvider {
                     throw new IllegalArgumentException("Invalid column " + key);
                 }
             }
+        }
+
+        // Do not allow to create request if the list contains a uri which does not exist
+        final LocalCallingIdentity token = clearLocalCallingIdentity();
+        try {
+            for (Uri uri : uris) {
+                try (Cursor c = queryForSingleItem(uri, new String[]{FileColumns._ID}, null, null,
+                        null)) {
+                    // queryForSingleItem method throws FileNotFoundException if no items were
+                    // found, or multiple items were found, or there was trouble reading the data.
+                } catch (FileNotFoundException e) {
+                    throw new IllegalArgumentException("Invalid Uri: " + uri, e);
+                }
+            }
+        } finally {
+            restoreLocalCallingIdentity(token);
         }
 
         final Context context = getContext();
@@ -8227,8 +8244,15 @@ public class MediaProvider extends ContentProvider {
             }
 
             final LocalCallingIdentity token = clearLocalCallingIdentity();
-            final Uri genericUri = MediaStore.Files.getContentUri(volumeName,
-                    ContentUris.parseId(uri));
+
+            final Uri genericUri;
+            try {
+                genericUri = MediaStore.Files.getContentUri(volumeName, ContentUris.parseId(uri));
+            } catch (NumberFormatException e) {
+                restoreLocalCallingIdentity(token);
+                throw e;
+            }
+
             try (Cursor c = queryForSingleItem(genericUri,
                     sPlacementColumns.toArray(new String[0]), userWhere, userWhereArgs, null)) {
                 for (int i = 0; i < c.getColumnCount(); i++) {
