@@ -39,7 +39,7 @@ import com.android.photopicker.core.Main
 import com.android.photopicker.core.configuration.ConfigurationManager
 import com.android.photopicker.core.events.Event
 import com.android.photopicker.core.events.Events
-import com.android.photopicker.core.features.FeatureToken.CORE
+import com.android.photopicker.core.features.FeatureToken
 import com.android.photopicker.core.selection.Selection
 import com.android.photopicker.data.model.Media
 import com.android.photopicker.inject.PhotopickerTestModule
@@ -169,16 +169,16 @@ class MainActivityTest {
                 .setComponent(
                     ComponentName(
                         InstrumentationRegistry.getInstrumentation().targetContext,
-                        MainActivity::class.java
+                        MainActivity::class.java,
                     )
                 )
 
         with(launchActivityForResult<MainActivity>(intent)) {
-            mainScope.runTest {
-                onActivity {
+            testScope.runTest {
+                onActivity { activity ->
                     mainScope.launch {
                         selection.add(testImage)
-                        events.get().dispatch(Event.MediaSelectionConfirmed(CORE.token))
+                        activity.onMediaSelectionConfirmed()
                     }
                 }
 
@@ -191,6 +191,51 @@ class MainActivityTest {
                 .isEqualTo(RESULT_OK)
             val data = result?.resultData
 
+            assertWithMessage("Expected activity to return a uri")
+                .that(data?.getData())
+                .isEqualTo(testImage.mediaUri)
+        }
+    }
+
+    @Test
+    fun testMainActivityFinishesOnMediaSelectionConfirmedEvent() {
+        val testImage = StubProvider.getTestMediaFromStubProvider(1).first()
+
+        val intent =
+            Intent()
+                .setAction(MediaStore.ACTION_PICK_IMAGES)
+                .putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, 1)
+                .setComponent(
+                    ComponentName(
+                        InstrumentationRegistry.getInstrumentation().targetContext,
+                        MainActivity::class.java,
+                    )
+                )
+
+        with(launchActivityForResult<MainActivity>(intent)) {
+            testScope.runTest {
+                onActivity { activity ->
+                    mainScope.launch {
+                        selection.add(testImage)
+                        events
+                            .get()
+                            .dispatch(
+                                Event.MediaSelectionConfirmed(
+                                    dispatcherToken = FeatureToken.PREVIEW.token
+                                )
+                            )
+                    }
+                }
+
+                advanceTimeBy(100)
+            }
+
+            val result = this.result
+            assertWithMessage("Expected scenario result to be OK")
+                .that(result?.resultCode)
+                .isEqualTo(RESULT_OK)
+
+            val data = result?.resultData
             assertWithMessage("Expected activity to return a uri")
                 .that(data?.getData())
                 .isEqualTo(testImage.mediaUri)
@@ -213,16 +258,16 @@ class MainActivityTest {
                 .setComponent(
                     ComponentName(
                         InstrumentationRegistry.getInstrumentation().targetContext,
-                        MainActivity::class.java
+                        MainActivity::class.java,
                     )
                 )
 
         with(launchActivityForResult<MainActivity>(intent)) {
-            mainScope.runTest {
-                onActivity {
+            testScope.runTest {
+                onActivity { activity ->
                     mainScope.launch {
                         selection.add(testImage)
-                        events.get().dispatch(Event.MediaSelectionConfirmed(CORE.token))
+                        activity.onMediaSelectionConfirmed()
                     }
                 }
 
@@ -257,16 +302,16 @@ class MainActivityTest {
                 .setComponent(
                     ComponentName(
                         InstrumentationRegistry.getInstrumentation().targetContext,
-                        MainActivity::class.java
+                        MainActivity::class.java,
                     )
                 )
 
         with(launchActivityForResult<MainActivity>(intent)) {
-            mainScope.runTest {
-                onActivity {
+            testScope.runTest {
+                onActivity { activity ->
                     mainScope.launch {
                         selection.addAll(selectedItems)
-                        events.get().dispatch(Event.MediaSelectionConfirmed(CORE.token))
+                        activity.onMediaSelectionConfirmed()
                     }
                 }
 
