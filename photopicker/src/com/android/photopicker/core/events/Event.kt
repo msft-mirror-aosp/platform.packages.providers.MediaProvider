@@ -40,14 +40,6 @@ interface Event {
     val dispatcherToken: String
 
     /**
-     * Individual elements wishing to indicate a user choice for the current [Selection] should
-     * dispatch [MediaSelectionConfirmed] to begin the sequence of preparing media. No further
-     * action is required, Preloading will be chosen based on the current [PhotopickerConfiguration]
-     * and available set of [PhotopickerFeature].
-     */
-    data class MediaSelectionConfirmed(override val dispatcherToken: String) : Event
-
-    /**
      * Fired when the user confirms their media selection from the preview screen. This is used in
      * single-select mode to finish the activity.
      */
