@@ -264,7 +264,6 @@ private fun defaultBuildMediaItem(
         is MediaGridItem.MediaItem -> {
             // Padding is animated based on the selected state of the item. When the item is
             // selected, it should shrink in the cell and provide a surface background.
-
             val padding by
                 animateDpAsState(
                     if (isSelected) {
