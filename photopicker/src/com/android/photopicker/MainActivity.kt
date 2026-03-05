@@ -175,8 +175,12 @@ class MainActivity : Hilt_MainActivity() {
             events.get().flow.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { event
                 ->
                 when (event) {
-                    is Event.BrowseToDocumentsUi -> referToDocumentsUi(userRequested = true)
-                    is Event.MediaSelectionConfirmed -> launch { onMediaSelectionConfirmed() }
+
+                    /**
+                     * [MediaSelectionConfirmed] will be dispatched in response to the user
+                     * confirming their selection of Media in the UI.
+                     */
+                    is Event.MediaSelectionConfirmed -> onMediaSelectionConfirmed()
                     else -> {}
                 }
             }
