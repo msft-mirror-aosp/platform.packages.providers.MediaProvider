@@ -198,46 +198,21 @@ class SelectionBarFeatureTest : PhotopickerFeatureBaseTest() {
     }
 
     @Test
-    fun testSelectionBarIsEnabledForSingleSelectInActivityMode() {
-        val configOne = PhotopickerConfiguration(action = "TEST_ACTION", sessionId = sessionId)
+    fun testSelectionBarNotEnabledForSingleSelect() {
+        val configOne = PhotopickerConfiguration(action = "TEST_ACTION")
         assertWithMessage("SelectionBarFeature is not always enabled for TEST_ACTION")
             .that(SelectionBarFeature.Registration.isEnabled(configOne))
-            .isEqualTo(true)
+            .isEqualTo(false)
 
         val configTwo = PhotopickerConfiguration(action = MediaStore.ACTION_PICK_IMAGES)
         assertWithMessage("SelectionBarFeature is not always enabled")
             .that(SelectionBarFeature.Registration.isEnabled(configTwo))
-            .isEqualTo(true)
+            .isEqualTo(false)
 
         val configThree = PhotopickerConfiguration(action = Intent.ACTION_GET_CONTENT)
         assertWithMessage("SelectionBarFeature is not always enabled")
             .that(SelectionBarFeature.Registration.isEnabled(configThree))
-            .isEqualTo(true)
-    }
-
-    @Test
-    fun testSelectionBarIsAlwaysEnabledInEmbeddedMode() {
-        val configOne =
-            PhotopickerConfiguration(
-                action = "",
-                runtimeEnv = PhotopickerRuntimeEnv.EMBEDDED,
-                selectionLimit = 1,
-                sessionId = sessionId,
-            )
-        assertWithMessage("SelectionBarFeature not always enabled for EMBEDDED mode")
-            .that(SelectionBarFeature.Registration.isEnabled(configOne))
-            .isEqualTo(true)
-
-        val configTwo =
-            PhotopickerConfiguration(
-                action = "",
-                runtimeEnv = PhotopickerRuntimeEnv.EMBEDDED,
-                selectionLimit = 20,
-                sessionId = sessionId,
-            )
-        assertWithMessage("SelectionBarFeature not always enabled for EMBEDDED mode")
-            .that(SelectionBarFeature.Registration.isEnabled(configTwo))
-            .isEqualTo(true)
+            .isEqualTo(false)
     }
 
     @Test
