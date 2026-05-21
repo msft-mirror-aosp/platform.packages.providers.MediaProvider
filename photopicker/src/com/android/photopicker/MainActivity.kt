@@ -138,16 +138,9 @@ class MainActivity : Hilt_MainActivity() {
         // Begin listening for events before starting the UI.
         listenForEvents()
 
-        /*
-         * In single select sessions, the activity needs to end after a media object is selected,
-         * so register a listener to the selection so the activity can handle calling
-         * [onMediaSelectionConfirmed] itself.
-         *
-         * For multi-select, the activity has to wait for onMediaSelectionConfirmed to be called
-         * by the selection bar click handler, or for the [Event.MediaSelectionConfirmed], in
-         * the event the user ends the session from the [PreviewFeature]
-         */
-        listenForSelectionIfSingleSelect()
+        // Picker event logger starts listening for events dispatched throughout the app
+        photopickerEventLogger = PhotopickerEventLogger(dataService)
+        photopickerEventLogger.start(lifecycleScope, background, events.get())
 
         setContent {
             val photopickerConfiguration by
@@ -176,39 +169,14 @@ class MainActivity : Hilt_MainActivity() {
         }
     }
 
-    /**
-     * A collector that starts when Photopicker is running in single-select mode. This collector
-     * will trigger [onMediaSelectionConfirmed] when the first (and only) item is selected.
-     */
-    private fun listenForSelectionIfSingleSelect() {
-
-        // Only set up a collector if the selection limit is 1, otherwise the [SelectionBarFeature]
-        // will be enabled for the user to confirm the selection.
-        if (configurationManager.configuration.value.selectionLimit == 1) {
-            lifecycleScope.launch {
-                withContext(background) {
-                    selection.get().flow.collect {
-                        if (it.size == 1) {
-                            onMediaSelectionConfirmed()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /** Setup an [Event] listener for the [MainActivity] to monitor the event bus. */
     private fun listenForEvents() {
         lifecycleScope.launch {
             events.get().flow.flowWithLifecycle(lifecycle, Lifecycle.State.STARTED).collect { event
                 ->
                 when (event) {
-
-                    /**
-                     * [MediaSelectionConfirmed] will be dispatched in response to the user
-                     * confirming their selection of Media in the UI.
-                     */
-                    is Event.MediaSelectionConfirmed -> onMediaSelectionConfirmed()
+                    is Event.BrowseToDocumentsUi -> referToDocumentsUi(userRequested = true)
+                    is Event.MediaSelectionConfirmed -> launch { onMediaSelectionConfirmed() }
                     else -> {}
                 }
             }
