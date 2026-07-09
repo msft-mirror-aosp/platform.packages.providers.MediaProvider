@@ -17,6 +17,7 @@
 package com.android.providers.media.util;
 
 import static org.junit.Assert.assertArrayEquals;
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -174,6 +175,27 @@ public class XmpInterfaceTest {
     }
 
     @Test
+    public void testContainer_IsoRedactionRanges_OversizedXmp() throws Exception {
+        final File file = stageFile(R.raw.gps_test_xmp_big);
+        final IsoInterface mp4 = IsoInterface.fromFile(file);
+
+        // Verify that the oversized XMP box was added to the flattened list despite being oversized
+        long[] xmpRanges = mp4.getBoxRanges(IsoInterface.BOX_XMP);
+        long[] uuidXmpRanges = mp4.getBoxRanges(IsoInterface.XMP_UUID);
+        assertTrue(xmpRanges.length > 0 || uuidXmpRanges.length > 0);
+
+        // Verify that the oversized XMP box is flagged for redaction in its entirety
+        final XmpInterface xmp = XmpInterface.fromContainer(mp4);
+        final long[] actualRanges = xmp.getRedactionRanges().toArray();
+        assertEquals(2, actualRanges.length);
+        assertTrue(actualRanges[0] > 0);
+        assertTrue(actualRanges[1] > actualRanges[0]);
+
+        // Verify that it returns an empty redacted buffer (since data was skipped)
+        assertThat(xmp.getRedactedXmp()).isEmpty();
+    }
+
+    @Test
     public void testStream_LineOffsets() throws Exception {
         final String xml =
                 "<a:b xmlns:a='a' xmlns:c='c' c:d=''\n  c:f='g'>\n  <c:i>j</c:i>\n  </a:b>";
@@ -220,6 +242,17 @@ public class XmpInterfaceTest {
 
         assertNotNull(stream.toString());
         stream.close();
+    }
+
+    @Test
+    public void testRedactXmp_RemovesExifGpsAttributes() throws Exception {
+        final File file = stageFile(R.raw.gps_test_xmp);
+        final IsoInterface mp4 = IsoInterface.fromFile(file);
+
+        XmpInterface xmpInterface = XmpInterface.fromContainer(mp4);
+        final String redactedXmp = new String(xmpInterface.getRedactedXmp());
+        assertThat(redactedXmp).doesNotContain("exif:GPSLatitude");
+        assertThat(redactedXmp).doesNotContain("exif:GPSLongitude");
     }
 
     private static File stageFile(int resId) throws Exception {
