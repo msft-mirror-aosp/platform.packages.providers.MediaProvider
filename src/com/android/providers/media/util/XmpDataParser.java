@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.UUID;
 
 public final class XmpDataParser implements Closeable {
 
@@ -137,8 +136,9 @@ public final class XmpDataParser implements Closeable {
             } else if (NS_XMPMM.equals(ns)
                     && NAME_ORIGINAL_DOCUMENT_ID.equals(name)) {
                 builder.originalDocumentId(mParser.nextText());
-            } else if (NS_EXIF.equals(ns) && RedactionUtils.getsRedactedExifTags()
-                    .contains(name)) {
+            }
+
+            if (isSensitiveTagOrAttribute()) {
                 long start = offset;
                 do {
                     type = mParser.next();
@@ -195,8 +195,8 @@ public final class XmpDataParser implements Closeable {
             // attributes or tags, so we're willing to look for both
             final String ns = mParser.getNamespace();
             final String name = mParser.getName();
-            if (NS_EXIF.equals(ns) && RedactionUtils.getsRedactedExifTags()
-                    .contains(name)) {
+
+            if (isSensitiveTagOrAttribute()) {
                 long start = offset;
                 do {
                     type = mParser.next();
@@ -211,6 +211,22 @@ public final class XmpDataParser implements Closeable {
         return redactedRanges;
     }
 
+    private boolean isSensitiveTagOrAttribute() {
+        if (NS_EXIF.equals(mParser.getNamespace()) && RedactionUtils.getsRedactedExifTags()
+                .contains(mParser.getName())) {
+            return true;
+        }
+        for (int i = 0; i < mParser.getAttributeCount(); i++) {
+            final String attrNs = mParser.getAttributeNamespace(i);
+            final String attrName = mParser.getAttributeName(i);
+            if (NS_EXIF.equals(attrNs)
+                    && RedactionUtils.getsRedactedExifTags().contains(attrName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static class XmpData {
         @NonNull
         private final byte[] mRawXmp;
@@ -223,9 +239,8 @@ public final class XmpDataParser implements Closeable {
         }
 
         static @NonNull XmpData extractXmpData(@NonNull IsoInterface iso) {
-            UUID uuid = UUID.fromString("be7acfcb-97a9-42e8-9c71-999491e3afac");
-            byte[] buf = iso.getBoxBytes(uuid);
-            long[] xmpOffsets = iso.getBoxRanges(uuid);
+            byte[] buf = iso.getBoxBytesForXmpUuid();
+            long[] xmpOffsets = iso.getBoxRangesForXmpUuid();
 
             if (buf == null) {
                 buf = iso.getBoxBytes(IsoInterface.BOX_XMP);
